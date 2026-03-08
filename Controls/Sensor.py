@@ -11,11 +11,7 @@ SENSOR_SERIAL_PORT = "COM5"   # TODO: replace with the real sensor ESP32 port
 SENSOR_BAUD_RATE = 115200
 SENSOR_TIMEOUT_SEC = 1.0
 
-def open_sensor_serial_port(
-    port: str = SENSOR_SERIAL_PORT,
-    baud_rate: int = SENSOR_BAUD_RATE,
-    timeout: float = SENSOR_TIMEOUT_SEC,
-) -> serial.Serial:
+def open_sensor_serial_port(port: str = SENSOR_SERIAL_PORT, baud_rate: int = SENSOR_BAUD_RATE, timeout: float = SENSOR_TIMEOUT_SEC) -> serial.Serial:
     """Open the serial connection to the sensor ESP32."""
     return serial.Serial(port=port, baudrate=baud_rate, timeout=timeout)
 
@@ -56,13 +52,7 @@ def parse_sensor_packet(raw_line: str) -> dict[str, Any]:
 
 def save_sensor_packet(packet: dict[str, Any]) -> None:
     """Write one sensor packet into SQLite."""
-    insert_sensor_reading(
-        pressure_1=float(packet["pressure_1"]),
-        pressure_2=float(packet["pressure_2"]),
-        pressure_3=float(packet["pressure_3"]),
-        force=float(packet["force"]),
-        db_path=DB_PATH,
-    )
+    insert_sensor_reading(pressure_1=float(packet["pressure_1"]), pressure_2=float(packet["pressure_2"]), pressure_3=float(packet["pressure_3"]), force=float(packet["force"]), db_path=DB_PATH)
 
 
 def handle_sensor_stream(sensor_serial: serial.Serial) -> None:

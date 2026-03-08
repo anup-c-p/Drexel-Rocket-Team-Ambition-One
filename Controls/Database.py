@@ -95,13 +95,7 @@ def initialize_database(db_path: Path | str = DB_PATH) -> None:
         )
 
 
-def insert_sensor_reading(
-    pressure_1: float,
-    pressure_2: float,
-    pressure_3: float,
-    force: float,
-    db_path: Path | str = DB_PATH,
-) -> None:
+def insert_sensor_reading(pressure_1: float, pressure_2: float, pressure_3: float, force: float, db_path: Path | str = DB_PATH) -> None:
     """Append a sensor reading to history and update the latest snapshot."""
     timestamp_utc = time.time()
 
@@ -157,13 +151,7 @@ def get_sensor_history(limit: int = 100, db_path: Path | str = DB_PATH) -> list[
         return [dict(row) for row in rows]
 
 
-def update_servo_state(
-    servo_1_open: bool,
-    servo_2_open: bool,
-    servo_3_open: bool,
-    servo_4_open: bool,
-    db_path: Path | str = DB_PATH,
-) -> None:
+def update_servo_state(servo_1_open: bool, servo_2_open: bool, servo_3_open: bool, servo_4_open: bool, db_path: Path | str = DB_PATH) -> None:
     timestamp_utc = time.time()
     with get_connection(db_path) as conn:
         conn.execute(

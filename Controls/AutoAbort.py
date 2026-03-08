@@ -4,6 +4,8 @@ from typing import Any
 
 from Database import DB_PATH, get_abort_flag, get_latest_sensor_data, initialize_database, set_abort_flag
 
+FINAL_PRESSURE = 800
+
 
 def initialize_auto_abort_module() -> None:
     """Initialize persistent resources used by AutoAbort.py."""

@@ -11,7 +11,6 @@ SENSOR_SERIAL_PORT = "COM5"   # TODO: replace with the real sensor ESP32 port
 SENSOR_BAUD_RATE = 115200
 SENSOR_TIMEOUT_SEC = 1.0
 
-
 def open_sensor_serial_port(
     port: str = SENSOR_SERIAL_PORT,
     baud_rate: int = SENSOR_BAUD_RATE,

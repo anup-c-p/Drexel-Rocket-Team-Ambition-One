@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-DB_PATH = Path(__file__).resolve().parent / "robot_state.db"
+DB_PATH = "/Users/saltdev/rocketteam/Drexel-Rocket-Team-Ambition-One/data.db"
 
 
 def get_connection(db_path: Path | str = DB_PATH) -> sqlite3.Connection:

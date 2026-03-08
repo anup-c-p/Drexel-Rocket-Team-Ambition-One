@@ -10,11 +10,9 @@ CONTROL_SERIAL_PORT = "COM6"   # TODO: replace with the real servo ESP32 port
 CONTROL_BAUD_RATE = 115200
 CONTROL_TIMEOUT_SEC = 1.0
 
-def open_control_serial_port(
-    port: str = CONTROL_SERIAL_PORT,
-    baud_rate: int = CONTROL_BAUD_RATE,
-    timeout: float = CONTROL_TIMEOUT_SEC,
-) -> serial.Serial:
+FINAL_PRESSURE = 800.0
+
+def open_control_serial_port(port: str = CONTROL_SERIAL_PORT, baud_rate: int = CONTROL_BAUD_RATE, timeout: float = CONTROL_TIMEOUT_SEC) -> serial.Serial:
     """Open the serial connection to the servo-control ESP32."""
     return serial.Serial(port=port, baudrate=baud_rate, timeout=timeout)
 
@@ -24,20 +22,9 @@ def initialize_main_control_module() -> None:
     initialize_database(DB_PATH)
 
 
-def save_servo_state(
-    servo_1_open: bool,
-    servo_2_open: bool,
-    servo_3_open: bool,
-    servo_4_open: bool,
-) -> None:
+def save_servo_state(servo_1_open: bool, servo_2_open: bool, servo_3_open: bool, servo_4_open: bool) -> None:
     """Persist the latest commanded servo states in SQLite."""
-    update_servo_state(
-        servo_1_open=servo_1_open,
-        servo_2_open=servo_2_open,
-        servo_3_open=servo_3_open,
-        servo_4_open=servo_4_open,
-        db_path=DB_PATH,
-    )
+    update_servo_state(servo_1_open=servo_1_open, servo_2_open=servo_2_open, servo_3_open=servo_3_open, servo_4_open=servo_4_open, db_path=DB_PATH)
 
 
 def load_abort_flag() -> bool:
@@ -50,19 +37,14 @@ def load_servo_state() -> dict[str, Any] | None:
     return get_servo_state(DB_PATH)
 
 
-def build_servo_command(
-    servo_1_open: bool,
-    servo_2_open: bool,
-    servo_3_open: bool,
-    servo_4_open: bool,
-) -> str:
-    """Build the command string that will be sent to the servo ESP32.
-
-    TODO:
-    - Define the serial command protocol expected by the servo ESP32.
-    - Confirm whether commands should be JSON, CSV, or another format.
-    """
-    raise NotImplementedError("TODO: implement servo command formatting")
+def build_servo_command(servo_index: int, state: bool) -> str:
+    addon = 1 if state else 0
+    match servo_index:
+        case 1: return "a"+addon
+        case 2: return "b"+addon
+        case 3: return "c"+addon
+        case 4: return "d"+addon
+        case _: return ""
 
 
 def send_servo_command(control_serial: serial.Serial, command: str) -> None:

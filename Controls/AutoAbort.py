@@ -27,20 +27,10 @@ def update_abort_flag(abort_flag: bool) -> None:
     set_abort_flag(abort_flag=abort_flag, db_path=DB_PATH)
 
 
-def load_abort_flag() -> bool:
-    """Read the current abort flag from SQLite."""
-    return get_abort_flag(DB_PATH)
-
-
 def should_abort(sensor_data: dict[str, Any]) -> bool:
-    """Evaluate whether the current system state should trigger an abort.
-
-    TODO:
-    - Add your actual safety thresholds for all three pressure sensors.
-    - Add your actual force threshold.
-    - Add stale-data or timeout checks if needed.
-    """
-    raise NotImplementedError("TODO: implement abort decision logic")
+    """Evaluate whether the current system state should trigger an abort."""
+    p_t = float(sensor_data["pressure 1"])
+    return (p_t >= P_F)
 
 
 def run_auto_abort() -> None:
@@ -51,7 +41,13 @@ def run_auto_abort() -> None:
     - Decide the polling rate.
     - Handle the case where no sensor data exists yet.
     """
-    raise NotImplementedError("TODO: implement auto-abort loop")
+    while (True):
+        sensor_data = get_latest_sensor_data(db_path=DB_PATH)
+        if (should_abort(sensor_data)):
+            update_abort_flag(True)
+            break
+        
+        sleep(0) #TODO fill this in
 
 
 def main() -> None:

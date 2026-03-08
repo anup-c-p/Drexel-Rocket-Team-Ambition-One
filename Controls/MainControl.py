@@ -67,12 +67,7 @@ def await_user_input(key: str) -> None:
     
 
 def send_serial_command(control_serial: serial.Serial, command: str) -> None:
-    """Send one command to the servo ESP32.
-
-    TODO:
-    - Add command acknowledgements / retries if needed.
-    - Add application-specific logging.
-    """
+    """Send one command to the servo ESP32."""
     control_serial.write((command + "\n").encode("utf-8"))
 
 
@@ -88,15 +83,30 @@ def ignition_sequence(control_serial: serial.Serial) -> None:
         print("Ignition Step 1: GSE NOS Open")
         send_serial_command(control_serial, GSE_NOS_OPEN)
         gse_nos = True
+        save_servo_state()
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO: Fill this in
+        load_abort_flag()
+        if not race_condition: break
         
         print("Ignition Step 2: Await User Input")
         await_user_input("continue")
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO: Fill this in
+        load_abort_flag()
+        if not race_condition: break
         
         print("Ignition Step 3: GSE NOS Close")
         send_serial_command(control_serial, GSE_NOS_CLOSE)
+        gse_nos = False
+        save_servo_state()
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO: Fill this in
+        load_abort_flag()
+        if not race_condition: break
         
         print("Ignition Step 4: NOS Pressure Check")
         p_t = get_sensor_data()
@@ -114,36 +124,81 @@ def ignition_sequence(control_serial: serial.Serial) -> None:
         print("Ignition Step 5: Arm Ignition System")
         await_user_input("arm")
         print("WARNING: System Holding")
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO fill this in
-        print("Ignition Step 6: Arm Ignition System")
-        print("WARNING: System Holding")
+        load_abort_flag()
+        if not race_condition: break
+        print("Ignition Step 6: Arm Ignition Sequence")
         await_user_input("arm")
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO fill this in
+        load_abort_flag()
+        if not race_condition: break
         
         print("Ignition Step 7: MPV NOS & E85 Open")
         send_serial_command(control_serial, MPV_NOS_OPEN)
+        mpv_nos = True
+        save_servo_state()
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO fill this in
+        load_abort_flag()
+        if not race_condition: break
         send_serial_command(control_serial, MPV_E85_OPEN)
+        mpv_e85 = True
+        save_servo_state()
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO fill this in
+        load_abort_flag()
+        if not race_condition: break
         
         print("Ignition Step 8: Ignition")
         send_serial_command(control_serial, IGNITER_TRIGGER)
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO fill this in
+        load_abort_flag()
+        if not race_condition: break
         
         print("Ignition Step 9: MPV NOS & E85 Close")
         send_serial_command(control_serial, MPV_NOS_CLOSE)
+        mpv_nos = False
+        save_servo_state()
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO fill this in
+        load_abort_flag()
+        if not race_condition: break
         send_serial_command(control_serial, MPV_E85_CLOSE)
+        mpv_e85 = False
+        save_servo_state()
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO fill this in
+        load_abort_flag()
+        if not race_condition: break
         
         print("Ignition Step 10: DELAY")
         for i in range(20):
             sleep(0.5)
-            #TODO add abort check
+            load_abort_flag()
+            if not race_condition: break
+        
+        load_abort_flag()
+        if not race_condition: break
         
         print("Ignition Step 11: MPV NOS Open")
         send_serial_command(control_serial, MPV_NOS_OPEN)
+        mpv_nos = True
+        save_servo_state()
+        load_abort_flag()
+        if not race_condition: break
         sleep(0) #TODO fill this in
+        load_abort_flag()
+        if not race_condition: break
         
         print("Ignition Step 12: Deactivate Ignition System")
         await_user_input("deactivate")
@@ -151,7 +206,7 @@ def ignition_sequence(control_serial: serial.Serial) -> None:
         break
     
     if (not race_condition):
-        print("EMERGENCY: Abort Sequence Initatiated")
+        print("----- EMERGENCY: Abort Sequence Initatiated -----")
         abort_sequence()
 
 
@@ -170,18 +225,26 @@ def safeing_sequence_1(control_serial: serial.Serial) -> None:
         
         print("Safeing Step 2: GSE NOS Open")
         send_serial_command(control_serial, GSE_NOS_OPEN)
+        gse_nos = True
+        save_servo_state()
         sleep(0) #TODO fill this in
         
         print("Safeing Step 3: GSE NOS Close")
         send_serial_command(control_serial, GSE_NOS_CLOSE)
+        gse_nos = False
+        save_servo_state()
         sleep(0) #TODO fill this in
         
         print("Safeing Step 4: GSE CO2 Open")
         send_serial_command(control_serial, GSE_CO2_OPEN)
+        gse_co2 = True
+        save_servo_state()
         sleep(0) #TODO fill this in
         
         print("Safeing Step 5: GSE CO2 Close")
         send_serial_command(control_serial, GSE_CO2_CLOSE)
+        gse_co2 = False
+        save_servo_state()
         sleep(0) #TODO fill this in
         break
 
@@ -201,10 +264,14 @@ def safeing_sequence_2(control_serial: serial.Serial) -> None:
         
         print("Safeing 2 Step 2: GSE NOS Open")
         send_serial_command(control_serial, GSE_NOS_OPEN)
+        gse_nos = True
+        save_servo_state()
         sleep(0) #TODO fill this in
         
         print("Safeing 2 Step 3: GSE CO2 Open")
         send_serial_command(control_serial, GSE_CO2_OPEN)
+        gse_co2 = True
+        save_servo_state()
         sleep(0) #TODO fill this in
         break
 
@@ -221,13 +288,21 @@ def abort_sequence(control_serial: serial.Serial) -> None:
     print("Abort Step 1: GSE NOS & CO2 Close")
     send_serial_command(control_serial, GSE_NOS_CLOSE)
     send_serial_command(control_serial, GSE_CO2_CLOSE)
+    gse_nos = False
+    gse_co2 = False
+    save_servo_state()
     print("Abort Step 2: MPV NOS & E85 Close")
     send_serial_command(control_serial, MPV_NOS_CLOSE)
     send_serial_command(control_serial, MPV_E85_CLOSE)
+    mpv_nos = False
+    mpv_e85 = False
+    save_servo_state()
     sleep(0) #TODO fill this in
     
     print("Abort Step 3: MPV NOS Open")
     send_serial_command(control_serial, MPV_NOS_OPEN)
+    mpv_nos = True
+    save_servo_state()
     sleep(0) #TODO fill this in
     
     safeing_sequence_1(control_serial)
@@ -235,15 +310,12 @@ def abort_sequence(control_serial: serial.Serial) -> None:
 
 
 def run_main_control(control_serial: serial.Serial) -> None:
-    """Main control loop.
-
-    TODO:
-    - Read desired state from your higher-level control logic.
-    - Check abort flag before sending movement commands.
-    - Save commanded servo states after successful sends.
-    """
+    """Main control loop."""
     if (race_condition):
         ignition_sequence(control_serial)
+        
+    else:
+        abort_sequence(control_serial)
     
     if (race_condition):
         safeing_sequence_1(control_serial)

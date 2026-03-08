@@ -147,22 +147,91 @@ def ignition_sequence(control_serial: serial.Serial) -> None:
         
         print("Ignition Step 12: Deactivate Ignition System")
         await_user_input("deactivate")
+        send_serial_command(control_serial, IGNITER_PURGE)
         break
     
     if (not race_condition):
+        print("EMERGENCY: Abort Sequence Initatiated")
         abort_sequence()
 
 
 def safeing_sequence_1(control_serial: serial.Serial) -> None:
-    pass
+    global gse_nos
+    global gse_co2
+    global mpv_nos
+    global mpv_e85
+    global race_condition
+    
+    print("----- Safeing Sequence Start -----")
+    while (race_condition):
+        print("Safeing Step 1: Await User Input")
+        await_user_input("continue")
+        sleep(0) #TODO fill this in
+        
+        print("Safeing Step 2: GSE NOS Open")
+        send_serial_command(control_serial, GSE_NOS_OPEN)
+        sleep(0) #TODO fill this in
+        
+        print("Safeing Step 3: GSE NOS Close")
+        send_serial_command(control_serial, GSE_NOS_CLOSE)
+        sleep(0) #TODO fill this in
+        
+        print("Safeing Step 4: GSE CO2 Open")
+        send_serial_command(control_serial, GSE_CO2_OPEN)
+        sleep(0) #TODO fill this in
+        
+        print("Safeing Step 5: GSE CO2 Close")
+        send_serial_command(control_serial, GSE_CO2_CLOSE)
+        sleep(0) #TODO fill this in
+        break
 
 
 def safeing_sequence_2(control_serial: serial.Serial) -> None:
-    pass
+    global gse_nos
+    global gse_co2
+    global mpv_nos
+    global mpv_e85
+    global race_condition
+    
+    print("----- Safeing Sequence 2 Start -----")
+    while (race_condition):
+        print("Safeing 2 Step 1: Await User Input")
+        await_user_input("continue")
+        sleep(0) #TODO fill this in
+        
+        print("Safeing 2 Step 2: GSE NOS Open")
+        send_serial_command(control_serial, GSE_NOS_OPEN)
+        sleep(0) #TODO fill this in
+        
+        print("Safeing 2 Step 3: GSE CO2 Open")
+        send_serial_command(control_serial, GSE_CO2_OPEN)
+        sleep(0) #TODO fill this in
+        break
 
 
 def abort_sequence(control_serial: serial.Serial) -> None:
-    pass
+    global gse_nos
+    global gse_co2
+    global mpv_nos
+    global mpv_e85
+    global race_condition
+    
+    print("----- Abort Sequence Start -----")
+    
+    print("Abort Step 1: GSE NOS & CO2 Close")
+    send_serial_command(control_serial, GSE_NOS_CLOSE)
+    send_serial_command(control_serial, GSE_CO2_CLOSE)
+    print("Abort Step 2: MPV NOS & E85 Close")
+    send_serial_command(control_serial, MPV_NOS_CLOSE)
+    send_serial_command(control_serial, MPV_E85_CLOSE)
+    sleep(0) #TODO fill this in
+    
+    print("Abort Step 3: MPV NOS Open")
+    send_serial_command(control_serial, MPV_NOS_OPEN)
+    sleep(0) #TODO fill this in
+    
+    safeing_sequence_1(control_serial)
+    safeing_sequence_2(control_serial)
 
 
 def run_main_control(control_serial: serial.Serial) -> None:
@@ -173,9 +242,14 @@ def run_main_control(control_serial: serial.Serial) -> None:
     - Check abort flag before sending movement commands.
     - Save commanded servo states after successful sends.
     """
-    ignition_sequence(control_serial)
-    safeing_sequence_1(control_serial)
-    safeing_sequence_2(control_serial)
+    if (race_condition):
+        ignition_sequence(control_serial)
+    
+    if (race_condition):
+        safeing_sequence_1(control_serial)
+    
+    if (race_condition):
+        safeing_sequence_2(control_serial)
 
 
 def main() -> None:

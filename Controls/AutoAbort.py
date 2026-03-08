@@ -4,8 +4,13 @@ from typing import Any
 
 from Database import DB_PATH, get_abort_flag, get_latest_sensor_data, initialize_database, set_abort_flag
 
-FINAL_PRESSURE = 800
+from Keys import *
 
+from time import sleep
+
+P_F = 800.0
+P_N = 600.0
+P_MIN = 500.0
 
 def initialize_auto_abort_module() -> None:
     """Initialize persistent resources used by AutoAbort.py."""

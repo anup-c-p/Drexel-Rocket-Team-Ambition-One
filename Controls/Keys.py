@@ -1,0 +1,13 @@
+GSE_NOS_OPEN = "gn1"
+GSE_NOS_CLOSE = "gn0"
+
+GSE_CO2_OPEN = "gc1"
+GSE_CO2_CLOSE = "gc0"
+
+MPV_NOS_OPEN = "mn1"
+MPV_NOS_CLOSE = "mn0"
+
+MPV_E85_OPEN = "me1"
+MPV_E85_CLOSE = "me0"
+
+IGNITER_TRIGGER = "ig1"

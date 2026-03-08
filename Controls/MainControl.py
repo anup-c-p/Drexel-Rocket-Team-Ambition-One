@@ -4,13 +4,26 @@ from typing import Any
 
 import serial
 
-from Database import DB_PATH, get_abort_flag, get_servo_state, initialize_database, update_servo_state
+from Database import DB_PATH, get_abort_flag, get_latest_sensor_data, get_servo_state, initialize_database, update_servo_state
+
+from Keys import *
+
+from time import sleep
 
 CONTROL_SERIAL_PORT = "COM6"   # TODO: replace with the real servo ESP32 port
 CONTROL_BAUD_RATE = 115200
 CONTROL_TIMEOUT_SEC = 1.0
 
-FINAL_PRESSURE = 800.0
+gse_nos = False
+gse_co2 = False
+mpv_nos = False
+mpv_e85 = False
+
+race_condition = True
+
+P_F = 800.0
+P_N = 600.0
+P_MIN = 500.0
 
 def open_control_serial_port(port: str = CONTROL_SERIAL_PORT, baud_rate: int = CONTROL_BAUD_RATE, timeout: float = CONTROL_TIMEOUT_SEC) -> serial.Serial:
     """Open the serial connection to the servo-control ESP32."""
@@ -22,14 +35,15 @@ def initialize_main_control_module() -> None:
     initialize_database(DB_PATH)
 
 
-def save_servo_state(servo_1_open: bool, servo_2_open: bool, servo_3_open: bool, servo_4_open: bool) -> None:
+def save_servo_state() -> None:
     """Persist the latest commanded servo states in SQLite."""
-    update_servo_state(servo_1_open=servo_1_open, servo_2_open=servo_2_open, servo_3_open=servo_3_open, servo_4_open=servo_4_open, db_path=DB_PATH)
+    update_servo_state(servo_1_open=gse_nos, servo_2_open=gse_co2, servo_3_open=mpv_nos, servo_4_open=mpv_e85, db_path=DB_PATH)
 
 
-def load_abort_flag() -> bool:
+def load_abort_flag() -> None:
+    global race_condition
     """Read the latest abort flag from SQLite."""
-    return get_abort_flag(DB_PATH)
+    race_condition = False if get_abort_flag(DB_PATH) else True
 
 
 def load_servo_state() -> dict[str, Any] | None:
@@ -37,17 +51,22 @@ def load_servo_state() -> dict[str, Any] | None:
     return get_servo_state(DB_PATH)
 
 
-def build_servo_command(servo_index: int, state: bool) -> str:
-    addon = 1 if state else 0
-    match servo_index:
-        case 1: return "a"+addon
-        case 2: return "b"+addon
-        case 3: return "c"+addon
-        case 4: return "d"+addon
-        case _: return ""
+def get_sensor_data() -> float | None:
+    values = get_latest_sensor_data(db_path=DB_PATH)
+    if (values == None):
+        return None
+    
+    return float(values["pressure_1"])
 
 
-def send_servo_command(control_serial: serial.Serial, command: str) -> None:
+def await_user_input(key: str) -> None:
+    key = key.lower()
+    cmd = input("continue sequence").lower()
+    while (cmd != key):
+        cmd = input("continue sequence").lower()
+    
+
+def send_serial_command(control_serial: serial.Serial, command: str) -> None:
     """Send one command to the servo ESP32.
 
     TODO:
@@ -55,6 +74,95 @@ def send_servo_command(control_serial: serial.Serial, command: str) -> None:
     - Add application-specific logging.
     """
     control_serial.write((command + "\n").encode("utf-8"))
+
+
+def ignition_sequence(control_serial: serial.Serial) -> None:
+    global gse_nos
+    global gse_co2
+    global mpv_nos
+    global mpv_e85
+    global race_condition
+    
+    print("----- Ignition Sequence Start -----")
+    while (race_condition):
+        print("Ignition Step 1: GSE NOS Open")
+        send_serial_command(control_serial, GSE_NOS_OPEN)
+        gse_nos = True
+        sleep(0) #TODO: Fill this in
+        
+        print("Ignition Step 2: Await User Input")
+        await_user_input("continue")
+        sleep(0) #TODO: Fill this in
+        
+        print("Ignition Step 3: GSE NOS Close")
+        send_serial_command(control_serial, GSE_NOS_CLOSE)
+        sleep(0) #TODO: Fill this in
+        
+        print("Ignition Step 4: NOS Pressure Check")
+        p_t = get_sensor_data()
+        while (p_t < P_F and p_t > P_N):
+            print("System Blowdown")
+            p_t = get_sensor_data()
+        
+            if (p_t >= P_F):
+                race_condition = False
+                break
+        
+        if (not race_condition):
+            break
+        
+        print("Ignition Step 5: Arm Ignition System")
+        await_user_input("arm")
+        print("WARNING: System Holding")
+        sleep(0) #TODO fill this in
+        print("Ignition Step 6: Arm Ignition System")
+        print("WARNING: System Holding")
+        await_user_input("arm")
+        sleep(0) #TODO fill this in
+        
+        print("Ignition Step 7: MPV NOS & E85 Open")
+        send_serial_command(control_serial, MPV_NOS_OPEN)
+        sleep(0) #TODO fill this in
+        send_serial_command(control_serial, MPV_E85_OPEN)
+        sleep(0) #TODO fill this in
+        
+        print("Ignition Step 8: Ignition")
+        send_serial_command(control_serial, IGNITER_TRIGGER)
+        sleep(0) #TODO fill this in
+        
+        print("Ignition Step 9: MPV NOS & E85 Close")
+        send_serial_command(control_serial, MPV_NOS_CLOSE)
+        sleep(0) #TODO fill this in
+        send_serial_command(control_serial, MPV_E85_CLOSE)
+        sleep(0) #TODO fill this in
+        
+        print("Ignition Step 10: DELAY")
+        for i in range(20):
+            sleep(0.5)
+            #TODO add abort check
+        
+        print("Ignition Step 11: MPV NOS Open")
+        send_serial_command(control_serial, MPV_NOS_OPEN)
+        sleep(0) #TODO fill this in
+        
+        print("Ignition Step 12: Deactivate Ignition System")
+        await_user_input("deactivate")
+        break
+    
+    if (not race_condition):
+        abort_sequence()
+
+
+def safeing_sequence_1(control_serial: serial.Serial) -> None:
+    pass
+
+
+def safeing_sequence_2(control_serial: serial.Serial) -> None:
+    pass
+
+
+def abort_sequence(control_serial: serial.Serial) -> None:
+    pass
 
 
 def run_main_control(control_serial: serial.Serial) -> None:
@@ -65,7 +173,9 @@ def run_main_control(control_serial: serial.Serial) -> None:
     - Check abort flag before sending movement commands.
     - Save commanded servo states after successful sends.
     """
-    raise NotImplementedError("TODO: implement main control loop")
+    ignition_sequence(control_serial)
+    safeing_sequence_1(control_serial)
+    safeing_sequence_2(control_serial)
 
 
 def main() -> None:

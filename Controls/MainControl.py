@@ -10,7 +10,7 @@ from Keys import *
 
 from time import sleep
 
-CONTROL_SERIAL_PORT = "COM6"   # TODO: replace with the real servo ESP32 port
+CONTROL_SERIAL_PORT = "/dev/cu.usbserial-0001"   # TODO: replace with the real servo ESP32 port
 CONTROL_BAUD_RATE = 115200
 CONTROL_TIMEOUT_SEC = 1.0
 
@@ -311,6 +311,14 @@ def abort_sequence(control_serial: serial.Serial) -> None:
 
 def run_main_control(control_serial: serial.Serial) -> None:
     """Main control loop."""
+    
+    input()
+    send_serial_command(control_serial, "c20")
+    input()
+    send_serial_command(control_serial, "c0")
+    
+    '''
+    
     if (race_condition):
         ignition_sequence(control_serial)
         
@@ -322,6 +330,7 @@ def run_main_control(control_serial: serial.Serial) -> None:
     
     if (race_condition):
         safeing_sequence_2(control_serial)
+        '''
 
 
 def main() -> None:

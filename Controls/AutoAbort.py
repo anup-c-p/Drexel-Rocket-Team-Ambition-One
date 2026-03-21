@@ -34,13 +34,7 @@ def should_abort(sensor_data: dict[str, Any]) -> bool:
 
 
 def run_auto_abort() -> None:
-    """Continuously monitor SQLite data and update the abort flag.
-
-    TODO:
-    - Add the polling loop.
-    - Decide the polling rate.
-    - Handle the case where no sensor data exists yet.
-    """
+    """Continuously monitor SQLite data and update the abort flag."""
     while (True):
         sensor_data = get_latest_sensor_data(db_path=DB_PATH)
         if (should_abort(sensor_data)):

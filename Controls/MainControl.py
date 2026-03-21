@@ -10,6 +10,8 @@ from Keys import *
 
 from time import sleep
 
+import threading
+
 CONTROL_SERIAL_PORT = "/dev/cu.usbserial-0001"   # TODO: replace with the real servo ESP32 port
 CONTROL_BAUD_RATE = 115200
 CONTROL_TIMEOUT_SEC = 1.0
@@ -24,6 +26,25 @@ race_condition = True
 P_F = 800.0
 P_N = 600.0
 P_MIN = 500.0
+
+def timed_input(key: str, timeout: int):
+    result = [None]
+
+    def get_input():
+        try:
+            result[0] = input(key)
+        except EOFError:
+            result[0] = None
+
+    thread = threading.Thread(target=get_input)
+    thread.daemon = True
+    thread.start()
+    thread.join(timeout)
+
+    if thread.is_alive():
+        return None
+    return result[0]
+
 
 def open_control_serial_port(port: str = CONTROL_SERIAL_PORT, baud_rate: int = CONTROL_BAUD_RATE, timeout: float = CONTROL_TIMEOUT_SEC) -> serial.Serial:
     """Open the serial connection to the servo-control ESP32."""
@@ -59,12 +80,19 @@ def get_sensor_data() -> float | None:
     return float(values["pressure_1"])
 
 
-def await_user_input(key: str) -> None:
-    key = key.lower()
-    cmd = input("continue sequence").lower()
-    while (cmd != key):
+def await_user_input(key: str, timeout=-1) -> None:
+    if timeout == -1:
+        key = key.lower()
         cmd = input("continue sequence").lower()
+        while (cmd != key):
+            cmd = input("continue sequence").lower()
     
+    else:
+        key = key.lower()
+        cmd = timed_input("continue sequence").lower()
+        while (cmd != key):
+            cmd = timed_input("continue sequence").lower()
+
 
 def send_serial_command(control_serial: serial.Serial, command: str) -> None:
     """Send one command to the servo ESP32."""
@@ -91,7 +119,7 @@ def ignition_sequence(control_serial: serial.Serial) -> None:
         if not race_condition: break
         
         print("Ignition Step 2: Await User Input")
-        await_user_input("continue")
+        await_user_input("continue", 70)
         load_abort_flag()
         if not race_condition: break
         sleep(0) #TODO: Fill this in

@@ -37,10 +37,11 @@ def parse_sensor_packet(raw_line: str) -> dict[str, Any]:
 
     Expected dictionary shape:
         {
-            "pressure_1": float,
-            "pressure_2": float,
-            "pressure_3": float,
-            "force": float,
+            "p1":float,
+            "p2":float,
+            "p3":float,
+            "f":float,
+            "a":int,
         }
 
     TODO:

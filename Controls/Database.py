@@ -34,7 +34,9 @@ def initialize_database(db_path: Path | str = DB_PATH) -> None:
                 pressure_1 REAL NOT NULL,
                 pressure_2 REAL NOT NULL,
                 pressure_3 REAL NOT NULL,
-                force REAL NOT NULL
+                force REAL NOT NULL,
+                abort INTEGER NOT NULL,
+                state INTEGER NOT NULL
             )
             """
         )
@@ -47,7 +49,9 @@ def initialize_database(db_path: Path | str = DB_PATH) -> None:
                 pressure_1 REAL NOT NULL,
                 pressure_2 REAL NOT NULL,
                 pressure_3 REAL NOT NULL,
-                force REAL NOT NULL
+                force REAL NOT NULL,
+                abort INTEGER NOT NULL,
+                state INTEGER NOT NULL
             )
             """
         )
@@ -95,7 +99,7 @@ def initialize_database(db_path: Path | str = DB_PATH) -> None:
         )
 
 
-def insert_sensor_reading(pressure_1: float, pressure_2: float, pressure_3: float, force: float, db_path: Path | str = DB_PATH) -> None:
+def insert_sensor_reading(pressure_1: float, pressure_2: float, pressure_3: float, force: float, abort: int, state: int, db_path: Path | str = DB_PATH) -> None:
     """Append a sensor reading to history and update the latest snapshot."""
     timestamp_utc = time.time()
 
@@ -103,25 +107,27 @@ def insert_sensor_reading(pressure_1: float, pressure_2: float, pressure_3: floa
         conn.execute(
             """
             INSERT INTO sensor_history (
-                timestamp_utc, pressure_1, pressure_2, pressure_3, force
-            ) VALUES (?, ?, ?, ?, ?)
+                timestamp_utc, pressure_1, pressure_2, pressure_3, force, abort, state
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (timestamp_utc, pressure_1, pressure_2, pressure_3, force),
+            (timestamp_utc, pressure_1, pressure_2, pressure_3, force, abort, state),
         )
 
         conn.execute(
             """
             INSERT INTO latest_sensor_data (
-                id, timestamp_utc, pressure_1, pressure_2, pressure_3, force
-            ) VALUES (1, ?, ?, ?, ?, ?)
+                id, timestamp_utc, pressure_1, pressure_2, pressure_3, force, abort, state
+            ) VALUES (1, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 timestamp_utc = excluded.timestamp_utc,
                 pressure_1 = excluded.pressure_1,
                 pressure_2 = excluded.pressure_2,
                 pressure_3 = excluded.pressure_3,
-                force = excluded.force
+                force = excluded.force,
+                abort = excluded.abort
+                state = excluded.state
             """,
-            (timestamp_utc, pressure_1, pressure_2, pressure_3, force),
+            (timestamp_utc, pressure_1, pressure_2, pressure_3, force, abort, state),
         )
 
 
@@ -129,7 +135,7 @@ def get_latest_sensor_data(db_path: Path | str = DB_PATH) -> dict[str, Any] | No
     with get_connection(db_path) as conn:
         row = conn.execute(
             """
-            SELECT timestamp_utc, pressure_1, pressure_2, pressure_3, force
+            SELECT timestamp_utc, pressure_1, pressure_2, pressure_3, force, abort, state
             FROM latest_sensor_data
             WHERE id = 1
             """
@@ -141,7 +147,7 @@ def get_sensor_history(limit: int = 100, db_path: Path | str = DB_PATH) -> list[
     with get_connection(db_path) as conn:
         rows = conn.execute(
             """
-            SELECT id, timestamp_utc, pressure_1, pressure_2, pressure_3, force
+            SELECT id, timestamp_utc, pressure_1, pressure_2, pressure_3, force, abort, state
             FROM sensor_history
             ORDER BY id DESC
             LIMIT ?

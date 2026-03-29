@@ -7,7 +7,7 @@ static const SequenceStep SEQ_LAUNCH[] = {
   waitInput(),
   servoStep('b', 0, 0),
   waitInput(),
-  servoStep('d', 1, 500),  
+  servoStep('d', 1, 200),  
   servoStep('c', 1, 200),
   actionStep(ignite,    500),  // pin HIGH, wait 10s
   actionStep(igniteOff, 0),

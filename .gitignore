@@ -6,6 +6,7 @@
 /Beta/Synnax/.DS_Store
 
 /V1/.DS_Store
+/V1/__pycache__/
 /V1/BaseStation/.venv/
 /V1/BaseStation/.DS_Store
 /V1/BaseStation/.vscode/

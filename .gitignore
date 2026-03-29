@@ -10,6 +10,7 @@
 /V1/BaseStation/.DS_Store
 /V1/BaseStation/.vscode/
 /V1/BaseStation/__pycache__/
+/V1/BaseStation/data/.DS_Store
 /V1/Synnax/.DS_Store
 /V1/Synnax/__pycache__/
 /V1/ESP32/.DS_Store
